@@ -19,7 +19,7 @@ my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
 my @success;
 
-IO::AIO::Promiser::open("$dir/file", Fcntl::O_CREAT | Fcntl::O_RDWR, 0)->then(
+IO::AIO::Promiser::open("$dir/file", Fcntl::O_CREAT | Fcntl::O_RDWR, 0644)->then(
     sub { push @success, \do { my $v = shift } },
 );
 

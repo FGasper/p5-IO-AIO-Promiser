@@ -8,3 +8,5 @@ README.md
 lib/IO/AIO/Promiser.pm
 t/failure.t
 t/general.t
+t/import.t
+t/nonimport.t
