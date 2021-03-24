@@ -1,0 +1,10 @@
+.github/workflows/linux.yml
+.github/workflows/macos.yml
+.gitignore
+LICENSE
+MANIFEST
+Makefile.PL
+README.md
+lib/IO/AIO/Promiser.pm
+t/failure.t
+t/general.t
