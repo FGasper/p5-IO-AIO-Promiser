@@ -30,6 +30,11 @@ WriteMakefile(
         },
     },
 
+    PREREQ_PM => {
+        'IO::AIO' => 0,
+        'Promise::XS' => 0,
+    },
+
     TEST_REQUIRES => {
         'Test::More' => 0,
         'Test::FailWarnings' => 0,
