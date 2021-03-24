@@ -175,20 +175,16 @@ SKIP: {
   SKIP: {
         skip "Linux only, not $^O!", 1 if $^O ne 'linux';
 
-      TODO: {
-            local $TODO = 'This doesn’t actually seem to do anything.';
+        my @success = ();
 
-            my @success = ();
+        IO::AIO::Promiser::rename2("$dir/renamed", "$dir/symlink", IO::AIO::RENAME_NOREPLACE)->then(
+            sub { diag "XXXX succeeded??" },
+            sub { @success = ('rename2', 0 + shift); },
+        );
 
-            IO::AIO::Promiser::rename2("$dir/renamed", "$dir/symlink", IO::AIO::RENAME_NOREPLACE)->then(
-                sub { diag "XXXX succeeded??" },
-                sub { @success = ('rename2', 0 + shift); },
-            );
+        IO::AIO::flush;
 
-            IO::AIO::flush;
-
-            is_deeply( \@success, ['rename2', Errno::EEXIST], 'no clobber' );
-        }
+        is_deeply( \@success, ['rename2', Errno::EEXIST], 'no clobber' );
     }
 }
 
