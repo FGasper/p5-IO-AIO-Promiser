@@ -3,11 +3,19 @@ package IO::AIO::Promiser;
 use strict;
 use warnings;
 
+our $VERSION = '0.01_01';
+
 =encoding utf-8
 
 =head1 NAME
 
 IO::AIO::Promiser - Promise interface around L<IO::AIO>
+
+=begin html
+
+<a href='https://coveralls.io/github/FGasper/p5-IO-AIO-Promiser?branch=main'><img src='https://coveralls.io/repos/github/FGasper/p5-IO-AIO-Promiser/badge.svg?branch=main' alt='Coverage Status' /></a>
+
+=end html
 
 =head1 SYNOPSIS
 

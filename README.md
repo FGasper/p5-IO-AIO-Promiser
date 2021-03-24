@@ -2,6 +2,10 @@
 
 IO::AIO::Promiser - Promise interface around [IO::AIO](https://metacpan.org/pod/IO::AIO)
 
+<div>
+    <a href='https://coveralls.io/github/FGasper/p5-IO-AIO-Promiser?branch=main'><img src='https://coveralls.io/repos/github/FGasper/p5-IO-AIO-Promiser/badge.svg?branch=main' alt='Coverage Status' /></a>
+</div>
+
 # SYNOPSIS
 
 (This example uses [AnyEvent::AIO](https://metacpan.org/pod/AnyEvent::AIO) for conciseness; it’s not difficult
