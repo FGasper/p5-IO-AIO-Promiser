@@ -6,6 +6,7 @@ MANIFEST
 Makefile.PL
 README.md
 lib/IO/AIO/Promiser.pm
+t/bogusimport.t
 t/failure.t
 t/general.t
 t/import.t
