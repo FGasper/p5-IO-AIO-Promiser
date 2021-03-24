@@ -57,6 +57,16 @@ is_deeply( \@success, ['read', length $to_write], 'success on read' );
 
 is($data, $to_write, '… and the buffer is filled');
 
+IO::AIO::Promiser::slurp("$dir/file", 0, 0)->then(
+    sub { @success = ('slurp', shift) },
+);
+
+IO::AIO::flush;
+
+is_deeply( \@success, ['slurp', $to_write], 'success on slurp' );
+
+#----------------------------------------------------------------------
+
 IO::AIO::Promiser::stat($fh)->then(
     sub { @success = ('stat', (stat _)[7]) },
 );

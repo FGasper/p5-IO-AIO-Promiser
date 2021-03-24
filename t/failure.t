@@ -88,6 +88,7 @@ for my $path_fn_ar (
     [ 'rename2', "$dir/qweqweqew", 0 ],
     [ 'readlink' ],
     [ 'truncate', 0 ],
+    [ 'slurp', 0, 0 ],
 ) {
     my ($fn, @xtra_args) = @$path_fn_ar;
 
