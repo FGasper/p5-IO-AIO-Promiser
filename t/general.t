@@ -175,9 +175,12 @@ SKIP: {
   SKIP: {
         skip "Linux only, not $^O!", 1 if $^O ne 'linux';
 
-        IO::AIO::Promiser::rename2("$dir/renamed", "$dir/symlink", IO::AIO::RENAME_NOREPLACE)->catch( sub {
-            @success = ('rename2', 0 + shift);
-        } );
+        my @success = ();
+
+        IO::AIO::Promiser::rename2("$dir/renamed", "$dir/symlink", IO::AIO::RENAME_NOREPLACE)->then(
+            sub { diag "XXXX succeeded??" },
+            sub { @success = ('rename2', 0 + shift); },
+        );
 
         IO::AIO::flush;
 
