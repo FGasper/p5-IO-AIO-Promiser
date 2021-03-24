@@ -72,6 +72,42 @@ IO::AIO::flush;
 
 is_deeply( \@got, [ 'write', Errno::ESPIPE ], 'write fail' );
 
+for my $path_fn_ar (
+    [ 'readdir' ],
+    [ 'readdirx', 0 ],
+    [ 'stat' ],
+    [ 'lstat' ],
+    [ 'utime', -1, -1 ],
+    [ 'chown', -1, -1 ],
+    [ 'chmod', 0444 ],
+    [ 'unlink' ],
+    [ 'mkdir', 0 ],
+    [ 'rmdir' ],
+    [ 'link', "$dir/qweqweqew" ],
+    [ 'rename', "$dir/qweqweqew" ],
+    [ 'rename2', "$dir/qweqweqew", 0 ],
+    [ 'readlink' ],
+    [ 'truncate', 0 ],
+) {
+    my ($fn, @xtra_args) = @$path_fn_ar;
+
+    IO::AIO::Promiser->can($fn)->("$dir/nonono/nono", @xtra_args)->catch(
+        sub { @got = ($fn, 0 + shift) },
+    );
+
+    IO::AIO::flush;
+
+    is_deeply( \@got, [ $fn, Errno::ENOENT ], "$fn fail" );
+}
+
+IO::AIO::Promiser::symlink("bababa", "$dir/nonono/nono", 0)->catch(
+    sub { @got = ('symlink', 0 + shift) },
+);
+
+IO::AIO::flush;
+
+is_deeply( \@got, [ 'symlink', Errno::ENOENT ], 'symlink fail' );
+
 #{
 #    open my $fh, '>', "$dir/aaa";
 #    POSIX::close( fileno $fh );

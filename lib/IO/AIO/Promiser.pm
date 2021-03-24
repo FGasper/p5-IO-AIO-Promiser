@@ -156,7 +156,7 @@ sub _create_func {
     };
 
     my ($limit, $resolver_cr) = @$metadata_ar;
-    $resolver_cr ||= \&_create_defined_resolver;
+    $resolver_cr ||= \&_create_negative_resolver;
 
     my $ioaio_cr = IO::AIO->can("aio_$fn") or do {
         Carp::confess "IO::AIO::aio_$fn is missing!";
@@ -208,16 +208,16 @@ sub _create_negative_resolver {
 
 BEGIN {
     %METADATA = (
-        wd => [0],
-        realpath => [0],
+        wd => [0, \&_create_defined_resolver],
+        realpath => [0, \&_create_defined_resolver],
 
-        open => [2],
-        close => [0],
-        seek => [2, \&_create_negative_resolver],
-        read => [4, \&_create_negative_resolver],
-        readdir => [0],
-        readdirx => [1],
-        write => [4, \&_create_negative_resolver],
+        open => [2, \&_create_defined_resolver],
+        close => [0, \&_create_defined_resolver],
+        seek => [2],
+        read => [4],
+        readdir => [0, \&_create_defined_resolver],
+        readdirx => [1, \&_create_defined_resolver],
+        write => [4],
         stat => [0],
         lstat => [0],
         utime => [2],
@@ -227,10 +227,10 @@ BEGIN {
         mkdir => [1],
         rmdir => [0],
         link => [1],
-        rename => [1, \&_create_negative_resolver],
-        rename2 => [2, \&_create_negative_resolver],
+        rename => [1],
+        rename2 => [2],
         symlink => [1],
-        readlink => [0],
+        readlink => [0, \&_create_defined_resolver],
         truncate => [1],
     );
 
