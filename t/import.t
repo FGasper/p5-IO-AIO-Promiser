@@ -9,5 +9,6 @@ use Test::FailWarnings;
 use IO::AIO::Promiser ':all';
 
 can_ok( __PACKAGE__, 'aio_open' );
+can_ok( __PACKAGE__, 'aio_slurp' );
 
 done_testing;

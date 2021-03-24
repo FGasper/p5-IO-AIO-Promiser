@@ -19,45 +19,33 @@ IO::AIO::Promiser - Promise interface around L<IO::AIO>
 
 =head1 SYNOPSIS
 
-(This example uses L<AnyEvent::AIO> for conciseness; it’s not difficult
-to adapt it for use with, e.g., L<IO::Async> or L<Mojolicious>.)
+(This example uses L<AnyEvent::AIO> for conciseness; see below for examples
+of setup with L<IO::Async> and L<Mojolicious>.)
 
-To slurp with L<AnyEvent> and L<Promise::AsyncAwait>:
+To slurp with L<AnyEvent>:
 
     use AnyEvent::AIO;
-    use Promise::AsyncAwait;
 
     use IO::AIO::Promiser ':all';
 
-    async sub slurp ($abs_path) {
-        my $fh = await aio_open($abs_path, Fcntl::O_RDONLY, 0);
-
-        my $buf = q<>;
-        1 while await aio_read($fh, undef, 65536, $buf, length $buf);
-
-        return $buf;
-    }
-
-… and now you can:
-
     my $cv = AnyEvent->condvar();
 
-    slurp("/etc/services")->then(
+    aio_slurp("/etc/services", 0, 0)->then(
         sub { $cv->(@_) },
         sub { $cv->croak(@_) },
     );
 
-    my $content = $cv->recv();
+    print $cv->recv();
 
 It’s a bit like L<Coro::AIO>, but with async/await rather than L<Coro>,
 and more proactive error-checking.
-
-See below for examples of setup with L<IO::Async> and L<Mojolicious>.
 
 =head1 DESCRIPTION
 
 L<IO::AIO> is great, but its callback-driven interface is less so.
 This module wraps IO::AIO so you can easily use promises with it instead.
+
+Its returned promises are L<Promise::XS::Promise> instances.
 
 =cut
 
@@ -253,7 +241,7 @@ sub import {
         my @to_import;
 
         if ($opt eq ':all') {
-            @to_import = keys %METADATA;
+            @to_import = ('slurp', keys %METADATA);
         }
         else {
             Carp::confess sprintf "%s: Bad import parameter: %s", __PACKAGE__, $opt;
@@ -269,6 +257,54 @@ sub import {
 1;
 
 #----------------------------------------------------------------------
+
+=head1 EXAMPLE: L<IO::Async> INTEGRATION
+
+NB: See L<IO::FDSaver>’s documentation for why that module is needed.
+
+    use IO::Async::Loop;
+    use IO::FDSaver;
+    use IO::AIO::Promiser ':all';
+
+    my $loop = IO::Async::Loop->new();
+
+    my $fdstore = IO::FDSaver->new();
+
+    $loop->watch_io(
+        handle => $fdstore->get_fh( IO::AIO::poll_fileno ),
+        on_read_ready => \&IO::AIO::poll_cb,
+    );
+
+    aio_slurp("/etc/services", 0, 0)->then(
+        sub { print shift },
+        sub { warn shift },
+    )->finally( sub { $loop->stop() } );
+
+    $loop->run();
+
+=head1 EXAMPLE: L<Mojolicious> INTEGRATION
+
+Mojolicious is similar to IO::Async, with the same need for L<IO::FDSaver>:
+
+    use Mojo::IOLoop;
+    use IO::FDSaver;
+    use IO::AIO::Promiser ':all';
+
+    my $fdstore = IO::FDSaver->new();
+
+    my $aio_fh = $fdstore->get_fh( IO::AIO::poll_fileno );
+
+    Mojo::IOLoop->singleton->reactor->io( $aio_fh, \&IO::AIO::poll_cb );
+    Mojo::IOLoop->singleton->reactor->watch( $aio_fh, 1, 0 );
+
+    # NB: These are Promise::XS::Promise objects, not Mojo::Promise.
+    # So there’s no wait() method, etc.
+    aio_slurp("/etc/services", 0, 0)->then(
+        sub { print shift },
+        sub { warn shift },
+    )->finally( sub { Mojo::IOLoop->stop() } );
+
+    Mojo::IOLoop->start();
 
 =head1 AUTHOR & COPYRIGHT
 

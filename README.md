@@ -8,45 +8,33 @@ IO::AIO::Promiser - Promise interface around [IO::AIO](https://metacpan.org/pod/
 
 # SYNOPSIS
 
-(This example uses [AnyEvent::AIO](https://metacpan.org/pod/AnyEvent::AIO) for conciseness; it’s not difficult
-to adapt it for use with, e.g., [IO::Async](https://metacpan.org/pod/IO::Async) or [Mojolicious](https://metacpan.org/pod/Mojolicious).)
+(This example uses [AnyEvent::AIO](https://metacpan.org/pod/AnyEvent::AIO) for conciseness; see below for examples
+of setup with [IO::Async](https://metacpan.org/pod/IO::Async) and [Mojolicious](https://metacpan.org/pod/Mojolicious).)
 
-To slurp with [AnyEvent](https://metacpan.org/pod/AnyEvent) and [Promise::AsyncAwait](https://metacpan.org/pod/Promise::AsyncAwait):
+To slurp with [AnyEvent](https://metacpan.org/pod/AnyEvent):
 
     use AnyEvent::AIO;
-    use Promise::AsyncAwait;
 
     use IO::AIO::Promiser ':all';
 
-    async sub slurp ($abs_path) {
-        my $fh = await aio_open($abs_path, Fcntl::O_RDONLY, 0);
-
-        my $buf = q<>;
-        1 while await aio_read($fh, undef, 65536, $buf, length $buf);
-
-        return $buf;
-    }
-
-… and now you can:
-
     my $cv = AnyEvent->condvar();
 
-    slurp("/etc/services")->then(
+    aio_slurp("/etc/services", 0, 0)->then(
         sub { $cv->(@_) },
         sub { $cv->croak(@_) },
     );
 
-    my $content = $cv->recv();
+    print $cv->recv();
 
 It’s a bit like [Coro::AIO](https://metacpan.org/pod/Coro::AIO), but with async/await rather than [Coro](https://metacpan.org/pod/Coro),
 and more proactive error-checking.
-
-See below for examples of setup with [IO::Async](https://metacpan.org/pod/IO::Async) and [Mojolicious](https://metacpan.org/pod/Mojolicious).
 
 # DESCRIPTION
 
 [IO::AIO](https://metacpan.org/pod/IO::AIO) is great, but its callback-driven interface is less so.
 This module wraps IO::AIO so you can easily use promises with it instead.
+
+Its returned promises are [Promise::XS::Promise](https://metacpan.org/pod/Promise::XS::Promise) instances.
 
 # FUNCTIONS
 
@@ -85,6 +73,54 @@ Since it’s clunky to have to type `IO::AIO::Promiser::open`, if you
 pass `:all` to this module on import you’ll get `aio_*` aliases
 exported into your namespace, so you can call, e.g., `aio_open` instead.
 This matches IO::AIO’s own calling convention.
+
+# EXAMPLE: [IO::Async](https://metacpan.org/pod/IO::Async) INTEGRATION
+
+NB: See [IO::FDSaver](https://metacpan.org/pod/IO::FDSaver)’s documentation for why that module is needed.
+
+    use IO::Async::Loop;
+    use IO::FDSaver;
+    use IO::AIO::Promiser ':all';
+
+    my $loop = IO::Async::Loop->new();
+
+    my $fdstore = IO::FDSaver->new();
+
+    $loop->watch_io(
+        handle => $fdstore->get_fh( IO::AIO::poll_fileno ),
+        on_read_ready => \&IO::AIO::poll_cb,
+    );
+
+    aio_slurp("/etc/services", 0, 0)->then(
+        sub { print shift },
+        sub { warn shift },
+    )->finally( sub { $loop->stop() } );
+
+    $loop->run();
+
+# EXAMPLE: [Mojolicious](https://metacpan.org/pod/Mojolicious) INTEGRATION
+
+Mojolicious is similar to IO::Async, with the same need for [IO::FDSaver](https://metacpan.org/pod/IO::FDSaver):
+
+    use Mojo::IOLoop;
+    use IO::FDSaver;
+    use IO::AIO::Promiser ':all';
+
+    my $fdstore = IO::FDSaver->new();
+
+    my $aio_fh = $fdstore->get_fh( IO::AIO::poll_fileno );
+
+    Mojo::IOLoop->singleton->reactor->io( $aio_fh, \&IO::AIO::poll_cb );
+    Mojo::IOLoop->singleton->reactor->watch( $aio_fh, 1, 0 );
+
+    # NB: These are Promise::XS::Promise objects, not Mojo::Promise.
+    # So there’s no wait() method, etc.
+    aio_slurp("/etc/services", 0, 0)->then(
+        sub { print shift },
+        sub { warn shift },
+    )->finally( sub { Mojo::IOLoop->stop() } );
+
+    Mojo::IOLoop->start();
 
 # AUTHOR & COPYRIGHT
 
