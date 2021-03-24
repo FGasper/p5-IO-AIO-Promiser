@@ -30,19 +30,19 @@ IO::AIO::flush;
 
 is_deeply( \@got, [ Errno::ENOENT ], 'open fail' );
 
-{
-    open my $fh, '>', "$dir/aaa";
-    POSIX::close( fileno $fh );
-
-    IO::AIO::Promiser::close($fh)->then(
-        sub { diag "close success???" },
-        sub { @got = 0 + shift },
-    );
-
-    IO::AIO::flush;
-
-    is_deeply( \@got, [ Errno::EBADF ], 'close fail' );
-}
+#{
+#    open my $fh, '>', "$dir/aaa";
+#    POSIX::close( fileno $fh );
+#
+#    IO::AIO::Promiser::close($fh)->then(
+#        sub { diag "close success???" },
+#        sub { @got = 0 + shift },
+#    );
+#
+#    IO::AIO::flush;
+#
+#    is_deeply( \@got, [ Errno::EBADF ], 'close fail' );
+#}
 
 #----------------------------------------------------------------------
 
