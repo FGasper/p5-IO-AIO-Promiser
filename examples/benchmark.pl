@@ -16,30 +16,40 @@ my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
 print "dir: $dir\n";
 
-print "Press any key to continue.\n";
-<>;
+my $count = 100;
 
-my $count = 10000;
+for (1 .. $count) {
+    open my $wfh, '>', "$dir/file-$_";
+    print {$wfh} join( q<>, map { rand } 1 .. 100 );
+    close $wfh;
+}
+
+print "Wrote out files; running benchmark …\n";
 
 Benchmark::cmpthese(
-    10,
+    1000,
     {
         plain => sub {
-            mkdir "$dir/mkdir-$_" for 1 .. $count;
+            for (1 .. $count) {
+                open my $wfh, '<', "$dir/file-$_";
+                my $content = do { local $/; <$wfh> };
+            }
         },
 
         io_aio => sub {
-            my $did = 0;
+            my @content = (undef) x $count;
 
             for (1 .. $count) {
-                IO::AIO::aio_mkdir("$dir/ioaio-$_", 0, sub { $did++ } );
+                my $i = $_;
+                IO::AIO::aio_slurp("$dir/file-$_", 0, 0, $content[$i], sub { warn "open failed: $!" if !shift } );
             }
 
             IO::AIO::flush;
         },
 
         io_aio_promiser => sub {
-            my @p = map { IO::AIO::Promiser::mkdir("$dir/ioaiop-$_", 0) } 1 .. $count;
+            my @p = map { IO::AIO::Promiser::slurp("$dir/file-$_", 0, 0) } 1 .. $count;
+
             IO::AIO::flush;
         },
     },
