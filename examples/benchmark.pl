@@ -14,9 +14,20 @@ use IO::AIO::Promiser ();
 
 my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
-print "dir: $dir\n";
+my $count = 400;
 
-my $count = 100;
+my @additional_benchmarks;
+if (eval { require fs::Promises }) {
+    print "fs::Promises is available; including it in benchmarks …\n";
+
+    push @additional_benchmarks, fs_promises => sub {
+        my @p = map { fs::Promises::slurp("$dir/file-$_", 0, 0) } 1 .. $count;
+
+        IO::AIO::flush;
+    },
+}
+
+print "Writing files in $dir …\n";
 
 for (1 .. $count) {
     open my $wfh, '>', "$dir/file-$_";
@@ -24,7 +35,7 @@ for (1 .. $count) {
     close $wfh;
 }
 
-print "Wrote out files; running benchmark …\n";
+print "Wrote out files; running benchmarks …\n";
 
 Benchmark::cmpthese(
     1000,
@@ -52,5 +63,7 @@ Benchmark::cmpthese(
 
             IO::AIO::flush;
         },
+
+        @additional_benchmarks,
     },
 );
